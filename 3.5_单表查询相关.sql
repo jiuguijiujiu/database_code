@@ -142,7 +142,7 @@ having
 # 1. 查看表数据
 select * from product;
 
-# 2. 查看（去重后）的所有类别
+# 2. 查看（去重后）所有类别
 select distinct category_id from product;
 
 # 3. 按照分类id和价格去重
@@ -151,3 +151,27 @@ select distinct category_id, price from product;
 # 去重思路2：分组去重
 select category_id, price from product group by category_id, price;
 
+# ------------------------------------案例7：分页查询------------------------------------
+# 1. 查看表数据
+select * from product;
+
+# 2. 场景1：3条/页
+select * from product limit 0, 3;   # 起始位置：（页数-1）*条数
+select * from product limit 3, 3;
+select * from product limit 6, 3;
+select * from product limit 9, 3;
+select * from product limit 12, 3;
+
+# 3. 场景2：5条/页
+select * from product limit 0, 5;   # 起始位置：（页数-1）*条数
+select * from product limit 5, 5;
+select * from product limit 10, 5;
+
+# 4. 场景3：4条/页，求第二页
+select * from product limit 4, 4;
+
+# 5. 不存在也不报错
+select * from product limit 100, 5;
+
+# 获取价格次高的商品数据
+select * from product order by price desc limit 1, 1;
