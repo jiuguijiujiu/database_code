@@ -77,7 +77,23 @@ select category_id, count(category_id) as count from product group by category_i
 
 select distinct category_id, price from product;
 
-select category_id, price as count from product group by category_id, price
+select category_id, price as count from product group by category_id, price;
 
+
+select * from product;
+
+select * from product limit 0,3;
+select * from product limit 3,3;
+select * from product limit 6,3;
+
+select * from product limit 0,5;
+select * from product limit 5,5;
+select * from product limit 10,5;
+
+select * from product limit 4,4;
+
+select * from product limit 100,4;
+
+select * from product order by price desc limit 0,1;
 
 
