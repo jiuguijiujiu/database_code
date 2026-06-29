@@ -1,99 +1,60 @@
-# ------------------------------------准备动作：准备数据------------------------------------
-use practice;
-# 准备数据
-# 1. 创建商品表.
-create table product
-(
-    pid int primary key auto_increment, # 商品id，主键
-    pname varchar(20),                  # 商品名
-    price double,                       # 商品单价
-    category_id varchar(32)             # 商品的分类id
-);
+# 需求1： 选中 employees表 查看所有数据
+select * from employees;
 
-# 2. 添加表数据.
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'联想',5000,'c001');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'海尔',3000,'c001');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'雷神',5000,'c001');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'杰克琼斯',800,'c002');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'真维斯',200,null);
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'花花公子',440,'c002');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'劲霸',2000,'c002');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'香奈儿',800,'c003');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'相宜本草',200,null);
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'面霸',5,'c003');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'好想你',56,'c004');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'香飘飘奶茶',1,'c005');
-INSERT INTO product(pid,pname,price,category_id) VALUES(null,'海澜之家',1,'c002');
+# 需求2：查询每个客户的 ID, company name, contact name, contact title, city, 和 country, 并按照国家名字排序
+select ID, company_name, contact_name, contact_title, city, country from customers order by country;
 
-select * from product;
-select pid, pname, price from product;
-select pid as 商品id, pname as 商品名, price as 商品价格 from product as p;
-select pid  商品id, pname  商品名, price  商品价格 from product  p;
-select  pname  商品名, price + 10  商品价格 from product  p;
-select p.pname, p.price from product as p;
-
-select * from product where price >= 500;
-select * from product where category_id != 'c001';
-select * from product where category_id <> 'c001';
-
-select pname, price from product where price between 800 and 3000;
-select pname, price from product where price >= 800 and price <= 3000;
-
-select * from product where pname like '_霸';
-select * from product where pname like '%斯%';
-
-select * from product where price in(200, 800, 5000);
-select * from product where price = 200 or price = 800 or price = 5000;
-
-select * from product where price not in(200, 800, 5000);
-select * from product where price != 200 and price != 800 and price != 5000;
-
-select * from product where category_id is null;
-select * from product where category_id is not null;
-
-select * from product order by price asc;
-select * from product order by price;
-select * from product order by price desc;
-
-select * from product order by price desc, category_id desc;
-
-
-select count(*) from product;
-select count(1) from product;
-select count(category_id) as 行数 from product;
+-- 需求3：查询每一个商品的product_name, category_name, quantity_per_unit, unit_price, units_in_stock 并且通过 unit_price 字段排序
+-- 方式1：显示内连接
+select
+    product_name, category_name, quantity_per_unit, unit_price, units_in_stock
+from
+    products as p
+inner join
+    categories as c
+on
+    p.category_id = c.category_id
+order by
+    unit_price;
 
 select
-    count(price) as count,
-    max(price) as max,
-    min(price) as min,
-    sum(price) as sum,
-    round(avg(price), 2) as avg
+    product_name, category_name, quantity_per_unit, unit_price, units_in_stock
 from
-    product;
+    products as p, categories as c
+where
+    p.category_id = c.category_id
+order by
+    unit_price;
 
-select category_id, count(category_id) as count from product group by category_id;
+# 需求4：列出所有提供了4种以上不同商品的供应商列表所需字段：supplier_id, company_name, and products_count（提供的商品种类数量）。
+# step1: 计算 每个供应商 提供的商品种类数,且大于4
+select
+    supplier_id, company_name,
+    count(*) as products_count
+from
+    products as p
+inner join
+    suppliers as s
+on
+    p.supplier_id = s.supplier_id
+group by
+    supplier_id, company_name
+having
+    count(*) >= 4;
 
-select category_id, count(category_id) as count from product group by category_id having category_id <> 'c001';
+-- 需求34：统计所有订单的运费，将运费高低分为三档
+-- 报表中包含三个字段
+-- low_freight freight值小于“ 40.0”的订单数
+-- avg_freight freight值大于或等于“ 40.0”但小于“ 80.0”的订单数
+-- high_freight freight值大于或等于“ 80.0”的订单数
 
-select distinct category_id, price from product;
+select count(*) as low_freight from orders where freight < 40;
+select count(*) as avg_freight from orders where freight >= 40 and fright < 80;
+select count(*) as high_freight from orders where freight >= 80;
 
-select category_id, price as count from product group by category_id, price;
-
-
-select * from product;
-
-select * from product limit 0,3;
-select * from product limit 3,3;
-select * from product limit 6,3;
-
-select * from product limit 0,5;
-select * from product limit 5,5;
-select * from product limit 10,5;
-
-select * from product limit 4,4;
-
-select * from product limit 100,4;
-
-select * from product order by price desc limit 0,1;
-
-
+select
+    count(if(freight < 40, 1, null)) as low_freight,
+    count(if(freight >= 40 and fright < 80, 1, null)) as avg_freight,
+    count(if(freight >= 80, 1, null)) as high_freight
+from
+    orders;

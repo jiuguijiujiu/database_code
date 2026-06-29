@@ -71,45 +71,175 @@ having
 # step3: 验真.   16,Bigfoot Breweries,6  -> 供应商id, 供应商公司名, 该公司供应的商品种类.
 select * from products where supplier_id=16;    # 6条
 
+
 -- 需求5: 提取订单编号为10250的订单详情, 显示如下信息：
 -- product_name, quantity, unit_price （ order_items 表), discount , order_date 按商品名字排序
+select
+    p.product_name,
+    oi.quantity, oi.unit_price, oi.discount,
+    o.order_date
+from
+    order_items as oi
+inner join
+    orders as o on oi.order_id = o.order_id
+inner join
+    products p on oi.product_id = p.product_id
+where o.order_id = '10250'
+order by
+    product_name asc;
 
 
 -- 需求6: 收集运输到法国的订单的相关信息，包括订单涉及的顾客和员工信息，下单和发货日期等.
+select
+    emp.first_name, emp.last_name, emp.hire_date,   #员工信息
+    o.order_date, o.shipped_date,                   #订单信息
+    cust.customer_id, cust.company_name             # 客户信息
+from
+    orders as o
+inner join
+    employees as emp on o.employee_id = emp.employee_id
+inner join
+    customers as cust on o.customer_id = cust.customer_id
+where
+    ship_country = 'France';
+
+# 查看订单的所有国家
+select distinct ship_country from orders;
 
 
 -- 需求7: 提供订单编号为10248的相关信息，包括product name, unit price (在 order_items 表中), quantity（数量）,company_name（供应商公司名字 ，起别名 supplier_name).
-
+select
+    product_name, oi.unit_price, quantity, company_name as supplier_name
+from
+    order_items as oi
+inner join
+    products as p on oi.product_id = p.product_id
+inner join
+    suppliers as s on p.supplier_id = s.supplier_id
+where
+    oi.order_id = '10248'
+;
 
 -- 需求8:  提取每件商品的详细信息，包括 商品名称（product_name）, 供应商的公司名称 (company_name，在 suppliers 表中),
 -- 类别名称 category_name, 商品单价unit_price, 和每单位商品数量quantity per unit
+select
+    product_name, company_name, category_name, unit_price, quantity_per_unit
+from
+    products as p
+inner join
+    categories c on p.category_id = c.category_id
+inner join
+    suppliers s on p.supplier_id = s.supplier_id
+;
 
 -- 需求9: 另一种常见的报表需求是查询某段时间内的业务指标, 我们统计2016年7月的订单数量，
+select * from orders where order_date like '2016-07%';
+select * from orders where order_date between '2016-07-01 00:00:00' and '2016-07-31 23:59:59';
+select * from orders where order_date >= '2016-07-01 00:00:00' and order_date <= '2016-07-31 23:59:59';
+select * from orders where year(order_date) = '2016' and month(order_date) = '07';
+
 
 -- 需求11: 统计每个供应商供应的商品种类数量, 结果返回供应商IDsupplier_id
 -- ，公司名字company_name ，商品种类数量（起别名products_count )使用 products 和 suppliers 表.
+select
+    s.supplier_id, s.company_name,              # 可以是分组字段，也可以是与 分组字段 唯一对应的 其他列
+    count(s.supplier_id) as products_count      # 聚合函数
+from
+    products as p
+inner join
+    suppliers as s on p.supplier_id = s.supplier_id
+group by
+    #supplier_id, company_name;     # 供应商id，公司名
+    supplier_id;                    # 供应商id
+# 验真
+select * from products where supplier_id = '1';
 
 -- 需求12: 我们要查找ID为10250的订单的总价（折扣前），SUM(unit_price * quantity)
+select sum(unit_price * quantity) as sum from order_items where order_id = '10250';
+
 
 -- 需求13:  统计每个员工处理的订单总数, 结果包含员工IDemployee_id，姓名first_name 和 last_name，处理的订单总数(别名 orders_count)
+select
+    e.employee_id, first_name, last_name,
+    count(e.employee_id) as orders_count
+from
+    employees as e
+inner join
+    orders as o on e.employee_id = o.employee_id
+group by
+    e.employee_id;
+# 验真
+select * from orders where employee_id = '1';
+
 
 -- 需求14: 统计每个类别中的库存产品值多少钱？显示三列：category_id, category_name, 和 category_total_value, 如何计算库存商品总价：SUM(unit_price * units_in_stock)。
+select
+    distinct c.category_id, category_name,
+    sum(unit_price * units_in_stock) as sum
+from
+    products as p
+inner join
+    categories as c on p.category_id = c.category_id
+group by
+    c.category_id;
 
--- 需求15: 计算每个员工的订单数量
+
+-- 需求15: 计算每个员工的订单数量(和13不是一样吗)
+select
+    e.employee_id, first_name, last_name,
+    count(e.employee_id) as orders_count
+from
+    employees as e
+inner join
+    orders as o on e.employee_id = o.employee_id
+group by
+    e.employee_id;
+# 验真
+select * from orders where employee_id = '1';
 
 
 -- 需求16: 计算每个客户的下订单数 结果包含：用户id、用户公司名称、订单数量（customer_id, company_name, orders_count ）
-
+select
+    c.customer_id, c.company_name,
+    count(c.customer_id) as orders_count
+from
+    orders as o
+inner join
+    customers as c on o.customer_id = c.customer_id
+group by
+    c.customer_id;
+# 验真
+select * from orders where customer_id = 'VINET';
 
 -- 需求17: 统计2016年6月到2016年7月用户的总下单金额并按金额从高到低排序
 -- 结果包含：顾客公司名称company_name 和总下单金额（折后实付金额）total_paid
 -- 提示：
 -- 计算实际总付款金额： SUM(unit_price quantity (1 - discount))
 -- 日期过滤 WHERE order_date >= '2016-06-01' AND order_date < '2016-08-01'
+select
+    c.company_name,
+    sum(unit_price * quantity * (1 - discount)) as total_paid
+from
+    orders as o
+inner join
+    customers c on o.customer_id = c.customer_id
+inner join
+    order_items as oi on o.order_id = oi.order_id
+where
+    order_date >= '2016-06-01' and order_date < '2016-08-01'
+group by
+    c.customer_id
+order by
+    total_paid desc;
 
 
 -- 需求18: 统计客户总数和带有传真号码的客户数量
 -- 需要字段：all_customers_count 和 customers_with_fax_count
+select
+    count(*) as all_customers_count,
+    count(fax) as customers_with_fax_count
+from
+    customers;
 
 
 -- 需求19: 我们要在报表中显示每种产品的库存量，但我们不想简单地将“ units_in_stock”列放在报表中。报表中只需要一个总体级别，例如低，高：
@@ -117,6 +247,16 @@ select * from products where supplier_id=16;    # 6条
 -- 50到100的可用性为中等(moderate)
 -- 小于50的为低(low)
 -- 零库存 为 (none)
+select
+    p.product_id, p.product_name, p.units_in_stock,
+    case
+        when units_in_stock > 100 then 'high'
+        when units_in_stock = 0 then 'none'
+        when units_in_stock < 50 then 'low'
+        else 'moderate'
+    end as units_in_stock_level
+from
+    products as p;
 
 
 -- 需求20: 创建一个报表，统计员工的经验水平
@@ -125,13 +265,42 @@ select * from products where supplier_id=16;    # 6条
 -- 'junior' 2014年1月1日以后雇用的员工
 -- 'middle' 在2013年1月1日之后至2014年1月1日之前雇用的员工
 -- 'senior' 2013年1月1日或之前雇用的员工
+select
+    first_name, last_name, hire_date,
+    case
+        when hire_date >= '2014-01-01' then 'junior'
+        when hire_date < '2013-01-01' then 'senior'
+        else 'middle'
+    end as experience
+from
+    employees;
+
 
 -- 需求21: 我们的商店要针对北美地区的用户做促销活动：任何运送到北美地区（美国，加拿大) 的包裹免运费。 创建报表，查询订单编号为10720~10730 活动后的运费价格
+select
+    order_id, ship_country, freight,
+    case
+        when ship_country in ('USA', 'Canada') then 0
+        else freight
+    end as new_freight
+from
+    orders
+where
+    order_id >= 10720 and order_id <= 10730;
 
 
 -- 需求22: 需求：创建客户基本信息报表, 包含字段：客户id customer_id, 公司名字 company_name
 -- 所在国家 country, 使用语言language, 使用语言language 的取值按如下规则
 -- Germany, Switzerland, and Austria 语言为德语 'German', 	UK, Canada, the USA, and Ireland -- 语言为英语 'English', 其他所有国家 'Other'
+select
+    customer_id, company_name, country,
+    case
+        when country in ('Germany', 'Switzerland', 'Austria') then 'German'
+        when country in ('UK', 'Canada', 'USA', 'Ireland') then 'English'
+        else 'Other'
+    end as language
+from
+    customers;
 
 
 -- 需求23: 需求：创建报表将所有产品划分为素食和非素食两类
