@@ -308,10 +308,50 @@ from
 -- 膳食类型 diet_type:
 -- 	非素食 'Non-vegetarian' 商品类别字段的值为 'Meat/Poultry' 和 'Seafood'.
 -- 	素食
+select
+    product_name, category_name,
+    case
+        when category_name in ('Meat/Poultry', 'Seafood') then 'Non-vegetarian'
+        else 'vegetarian'
+    end as diet_type
+from
+    products as p
+inner join
+    categories as c on p.category_id = c.category_id;
+
 
 -- 需求24: 在引入北美地区免运费的促销策略时，我们也想知道运送到北美地区和其它国家地区的订单数量
 -- 促销策略, 参见需求21的代码.
+# 思路一：普通版
+select
+    case
+        when ship_country in ('USA', 'Canada') then '北美'
+        else 'other'
+    end as new_addr,
+    count(*)
+from
+    orders
+group by
+    new_addr;
 
+# 思路二：cte写法
+with t1 as (
+    select
+        case
+            when ship_country in ('USA', 'Canada') then '北美'
+            else 'other'
+        end as new_addr
+    from
+        orders
+)
+select new_addr,count(new_addr) from t1 group by new_addr;
+
+# 思路三：count+if判断
+select
+    count(if(ship_country in ('USA', 'Canada'), 1, null)) as 北美,
+    count(if(ship_country not in ('USA', 'Canada'), 1, null)) as other
+from
+    orders;
 
 -- 需求25: 创建报表统计供应商来自那个大洲, 报表中包含两个字段：供应商来自哪个大洲（supplier_continent ）和 供应产品种类数量（product_count）
 -- 供应商来自哪个大洲（supplier_continent ）包含如下取值：
@@ -353,6 +393,18 @@ from
 -- 供应商公司名 company_name
 -- 由该供应商提供的总库存 all_units
 -- 由该供应商提供的高价值商品库存 expensive_units
+select
+    p.supplier_id, company_name,
+    sum(units_in_stock) as all_units,
+    sum(if(unit_price > 40, units_in_stock, 0)) as expensive_units
+from
+    products as p
+inner join
+    suppliers as s on p.supplier_id = s.supplier_id
+group by
+    p.supplier_id;
+
+
 
 -- 需求32: 创建报表来为每种商品添加价格标签，贵、中等、便宜
 -- 结果包含如下字段：product_id, product_name, unit_price, 和 price_level
